@@ -1,0 +1,24 @@
+services:
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  php-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - mongo
+    ports:
+      - "3000:80"
+    expose:
+      - "3000"
