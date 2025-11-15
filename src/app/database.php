@@ -1,116 +1,114 @@
 <?php
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use MongoDB\Client;
+
 class Database
 {
+    private $clientInstance;
 
-    //Algumas variáveis com dados sobre o Banco. 
-    private $servername = "db";
-    private $username = "root";
-    private $password = "root";
-    private $dbname = "meubanco";
-    private $instance;
+    private $dbInstance;
 
-    // método que retorna a instância de conexão
-    function getInstance()
+    private function getClient()
     {
-        if (empty($instance)) {
-            $instance = $this->connection();
-        }
-        return $instance;
-    }
-
-    //método que cria a instância de conexão. 
-    private function connection()
-    {
-        try {
-            $conn = new PDO("mysql:host=$this->servername;dbname=$this->dbname", $this->username, $this->password);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            return $conn;
-        } catch (PDOException $e) {
-            if (strpos($e->getMessage(), "Unknown database 'meubanco'")) {
-                $conn = $this->createDB();
-                return $conn;
+        if (empty($this->clientInstance)) {
+            try {
+                $this->clientInstance = new Client("mongodb://admin:admin@mongo:27017");
+            } catch (Exception $e) {
+                die("Erro ao conectar ao MongoDB: " . $e->getMessage());
             }
         }
+        return $this->clientInstance;
     }
 
-    //Métodos do CRUD
-    function createDB()
+    private function getDatabase()
     {
-        $sql = '';
-        try {
-            $cnx = new PDO("mysql:host=$this->servername", $this->username, $this->password);
-            $cnx->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $sql = "CREATE DATABASE IF NOT EXISTS $this->dbname";
-            $cnx->exec($sql);
-            $cnx->exec("USE $this->dbname");
+        if (empty($this->dbInstance)) {
+            $this->dbInstance = $this->getClient()->getDatabase("teste");
+        }
+        return $this->dbInstance;
+    }
 
-            return $cnx;
-        } catch (PDOException $e) {
-            echo $sql . "<br>" . $e->getMessage();
+    public function selectCollection(string $collectionName)
+    {
+        return $this->getDatabase()->getCollection($collectionName);
+    }
+
+    protected function insert(string $collectionName, $document)
+    {
+        try {
+            $collection = $this->selectCollection($collectionName);
+
+            $result = $collection->insertOne($document);
+
+            return $result->getInsertedId();
+        } catch (Exception $e) {
+            echo "Erro ao inserir: " . $e->getMessage();
+            return null;
         }
     }
 
-    function createTable($sql)
+    protected function find(string $collectionName, array $filter = [], array $options = [])
     {
         try {
-            $cnx = $this->getInstance();
+            $db = $this->getDatabase();
+            $collection = $db->selectCollection($collectionName);
 
-            $cnx->exec($sql);
-        } catch (PDOException $e) {
-            echo $sql . "<br>" . $e->getMessage();
+            $cursor = $collection->find($filter, $options);
+
+            return $cursor->toArray();
+        } catch (Exception $e) {
+            echo "Erro ao buscar: " . $e->getMessage();
+            return [];
         }
     }
 
-    function insert($sql)
+    protected function findOne(string $collectionName, array $filter = [], array $options = [])
     {
         try {
-            $cnx = $this->getInstance();
-            $cnx->exec($sql);
+            $db = $this->getDatabase();
+            $collection = $db->selectCollection($collectionName);
 
-            $lastId = $cnx->lastInsertId(); // pega o ID gerado automaticamente
-            return $lastId;
-        } catch (PDOException $e) {
-            return $e;
+            return $collection->findOne($filter, $options);
+        } catch (Exception $e) {
+            echo "Erro ao buscar um: " . $e->getMessage();
+            return null;
         }
     }
 
-    function select($sql)
+    protected function update(string $collectionName, array $filter, array $update)
     {
-
         try {
-            $cnx = $this->getInstance();
-            $result = $cnx->query($sql);
-            $data = $result->fetchAll(PDO::FETCH_ASSOC);
-            return $data;
-        } catch (PDOException $e) {
-            echo $sql . "<br>" . $e->getMessage();
+            $db = $this->getDatabase();
+            $collection = $db->selectCollection($collectionName);
+
+            $result = $collection->updateMany($filter, $update);
+
+            return $result->getModifiedCount();
+        } catch (Exception $e) {
+            echo "Erro ao atualizar: " . $e->getMessage();
+            return 0;
         }
     }
 
-    function update($sql)
+    protected function delete(string $collectionName, array $filter)
     {
-
-        try {
-            $cnx = $this->getInstance();
-            $result = $cnx->query($sql);
-
-            return $result;
-        } catch (PDOException $e) {
-            echo $sql . "<br>" . $e->getMessage();
+        if (empty($filter)) {
+            echo "Erro: Filtro de deleção não pode ser vazio para evitar deleção acidental de toda a collection.";
+            return 0;
         }
-    }
-
-    function delete($sql)
-    {
 
         try {
-            $cnx = $this->getInstance();
-            $result = $cnx->query($sql);
+            $db = $this->getDatabase();
+            $collection = $db->selectCollection($collectionName);
 
-            return $result;
-        } catch (PDOException $e) {
-            echo $sql . "<br>" . $e->getMessage();
+            $result = $collection->deleteMany($filter);
+
+            return $result->getDeletedCount();
+        } catch (Exception $e) {
+            echo "Erro ao deletar: " . $e->getMessage();
+            return 0;
         }
     }
 }

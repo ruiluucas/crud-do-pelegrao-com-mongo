@@ -3,21 +3,6 @@ require_once dirname(__FILE__) . '/../database.php';
 
 class CestaService extends Database
 {
-    public function __construct()
-    {
-        try {
-            $this->createTable("CREATE TABLE IF NOT EXISTS cestas (
-                id INT(6) AUTO_INCREMENT PRIMARY KEY,
-                pessoa_id INT(6),
-                produto_id INT(6),
-                FOREIGN KEY (pessoa_id) REFERENCES pessoas(id),
-                FOREIGN KEY (produto_id) REFERENCES produtos(id) 
-            )");
-        } catch (Exception $e) {
-            throw new Exception("Erro ao conectar ao banco de dados: " . $e->getMessage());
-        }
-    }
-
     public function create($userId, $produtoId)
     {
         $id = $this->insert("INSERT INTO cestas (pessoa_id, produto_id) VALUES ({$userId}, {$produtoId})");

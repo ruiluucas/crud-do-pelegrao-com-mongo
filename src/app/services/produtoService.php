@@ -3,20 +3,6 @@ require_once dirname(__FILE__) . '/../database.php';
 
 class ProdutoService extends Database
 {
-    public function __construct()
-    {
-        try {
-            $this->createTable("CREATE TABLE IF NOT EXISTS produtos (
-                id INT(6) AUTO_INCREMENT PRIMARY KEY,
-                nome VARCHAR(50) NOT NULL UNIQUE,
-                fornecedor_id INT(6),
-                preco float,
-                FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) 
-            )");
-        } catch (Exception $e) {
-            throw new Exception("Erro ao conectar ao banco de dados: " . $e->getMessage());
-        }
-    }
 
     public function create($nome, $fornecedorId, $preco)
     {
