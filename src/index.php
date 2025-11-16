@@ -44,7 +44,7 @@ $cursos = $cursoModel->getAllCursos();
           <?php if (!empty($cursos) && is_array($cursos)): ?>
             <?php foreach ($cursos as $curso): ?>
               <tr
-                class="hover:bg-gray-50 cursor-pointer"
+                class="hover:bg-neutral-500 transition-all cursor-pointer"
                 onclick="window.location.href='/curso.php?id=<?php echo $curso['_id']; ?>'">
                 <td class="px-4 py-2 border-b">
                   <?php echo $curso['nome']; ?>
