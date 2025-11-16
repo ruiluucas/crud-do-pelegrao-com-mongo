@@ -1,1 +1,2 @@
-tem que dar um composer install dentro do src
+- tem que dar um docker compose up -d --build
+- tem que dar um composer install dentro do src
